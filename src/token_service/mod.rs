@@ -15,17 +15,13 @@ pub mod TokenService {
 
     pub async fn exchange_code_for_token(code: &str) -> Result<TokenResponse, reqwest::Error> {
         let client = reqwest::Client::new();
-        todo!("implement params");
-        let params = [("Todo", "todo")];
-        /*
         let params = [
             ("client_id", CLIENT_ID),
             ("client_secret", CLIENT_SECRET),
             ("grant_type", "authorization_code"),
             ("code", code),
-            ("redirect_uri", REDIRECT_URI),
+            ("redirect_uri", env::var(RUST_PUBLIC_IRIDIUM_REDIRECT_URI)),
         ];
-         */
 
         let response = client.post("https://auth-server.com/token")
             .form(&params)

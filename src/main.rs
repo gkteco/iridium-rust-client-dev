@@ -1,4 +1,3 @@
-
 mod callback_service;
 mod token_service;
 mod state_generator_service;
@@ -37,7 +36,7 @@ async fn main() {
 
     let routes = auth.or(callback);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3000)).await;
+    warp::serve(routes).run(([127, 0, 0, 1], 8000)).await;
 }
 
 
