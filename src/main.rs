@@ -12,7 +12,7 @@ use std::str::FromStr;
 use warp::http::Uri;
 use crate::callback_service::CallBackService::handle_callback;
 use crate::state_generator_service::StateGenerator;
-use crate::url_generator_service::UrlGeneratorService::getIridiumAuthUrl;
+use crate::url_generator_service::UrlGeneratorService;
 
 
 
@@ -24,7 +24,7 @@ async fn main() {
 
     let auth = warp::path!("auth")
         .map( move || {
-            let uri = Uri::from_str(&getIridiumAuthUrl(&state)).unwrap();
+            let uri = Uri::from_str(&UrlGeneratorService::getIridiumAuthUrl(&state)).unwrap();
             warp::redirect(uri)
         });
 
