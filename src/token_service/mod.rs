@@ -3,6 +3,7 @@ use std::todo;
 pub mod TokenService {
     use reqwest::StatusCode;
     use serde::{Deserialize, Serialize};
+    use std::env;
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct TokenResponse {
@@ -16,14 +17,25 @@ pub mod TokenService {
     pub async fn exchange_code_for_token(code: &str) -> Result<TokenResponse, reqwest::Error> {
         let client = reqwest::Client::new();
         let params = [
-            ("client_id", CLIENT_ID),
-            ("client_secret", CLIENT_SECRET),
-            ("grant_type", "authorization_code"),
-            ("code", code),
-            ("redirect_uri", env::var(RUST_PUBLIC_IRIDIUM_REDIRECT_URI)),
+            (
+                "client_id",
+                env::var("CLIENT_ID").expect("CLIENT_ID must be set"),
+            ),
+            (
+                "client_secret",
+                env::var("CLIENT_SECRET").expect("CLIENT_SECRET must be set"),
+            ),
+            ("grant_type", "authorization_code".to_string()),
+            ("code", code.to_string()),
+            (
+                "redirect_uri",
+                env::var("RUST_PUBLIC_IRIDIUM_REDIRECT_URI")
+                    .expect("RUST_PUBLIC_IRIDIUM_REDIRECT_URI must be set"),
+            ),
         ];
 
-        let response = client.post("https://auth-server.com/token")
+        let response = client
+            .post("https://auth-server.com/token")
             .form(&params)
             .send()
             .await?;
@@ -35,5 +47,4 @@ pub mod TokenService {
             todo!("implements when status code is not OK");
         }
     }
-
 }
