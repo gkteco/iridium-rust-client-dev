@@ -2,8 +2,15 @@ pub mod CallBackService {
     use crate::callback_service::{exchange_headers, exchange_url};
     use crate::token_service::TokenService::exchange_code_for_token;
     use reqwest::StatusCode;
+    use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
+    use std::env;
+    use warp::http::HeaderMap;
 
+    #[derive(Deserialize, Serialize, Debug)]
+    struct TokenResponse {
+        access_token: String,
+    }
     pub async fn handle_callback(
         params: HashMap<String, String>,
         verifier: String,
@@ -16,12 +23,22 @@ pub mod CallBackService {
 
             match client.post(&exchange_url).headers(headers).send().await {
                 Ok(response) if response.status() == StatusCode::OK => {
-                    // If you're fetching JSON data or similar, you can process it here
-                    // For simplicity, we'll just convert the response body to a String and reply with it
-                    match response.text().await {
-                        Ok(body) => Ok(warp::reply::html(body)),
-                        Err(_) => Err(warp::reject()),
+                    let json = response.json::<TokenResponse>().await.unwrap();
+                    println!("{}", json.access_token);
+                    println!("json: {:?}", &json);
+                    match get_identity(&json.access_token).await {
+                        Ok(response) if response.status() == StatusCode::OK => {
+                            let json = response.json::<serde_json::Value>().await.unwrap();
+                            println!("json: {:?}", &json);
+                        }
+                        Ok(response) => {
+                            eprintln!("Unexpected response status: {}", response.status());
+                        }
+                        Err(e) => {
+                            eprintln!("Error making request: {}", e);
+                        }
                     }
+                    Ok(warp::reply::json(&json))
                 }
                 Ok(response) => {
                     eprintln!("Unexpected response status: {}", response.status());
@@ -35,6 +52,25 @@ pub mod CallBackService {
         } else {
             Err(warp::reject::not_found())
         }
+    }
+
+    pub async fn get_identity(token: &str) -> Result<reqwest::Response, reqwest::Error> {
+        let client = reqwest::Client::new();
+        let base_url =
+            env::var("RUST_IRIDIUM_BASE_URL").expect("RUST_IRIDIUM_BASE_URL must be set");
+        let identities_url = format!("{}identities", base_url);
+        let mut headers = HeaderMap::new();
+        let bearer = format!("Bearer {}", token);
+        headers.insert(
+            "Accept",
+            "application/vnd.iridium.id.identity-response.1+json"
+                .parse()
+                .unwrap(),
+        );
+
+        headers.insert("Authorization", bearer.parse().unwrap());
+
+        client.get(&identities_url).headers(headers).send().await
     }
 }
 
